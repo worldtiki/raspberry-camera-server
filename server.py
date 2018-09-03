@@ -65,7 +65,7 @@ class MyServer(BaseHTTPRequestHandler):
             f.close()
             deleteFile(path_to_image)
 
-        if self.path.startsWith("/get"):
+        if self.path.startswith("/get"):
             if '?' in self.path:
                 path, tmp = self.path.split('?', 1)
                 qs = urlparse.parse_qs(tmp)
