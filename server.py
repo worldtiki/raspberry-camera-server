@@ -92,16 +92,12 @@ class MyServer(BaseHTTPRequestHandler):
                 deleteFile(path_to_image)
                 camera.resolution = (1920, 1080)
                 camera.capture(path_to_image)
-                #Open the static file requested and send it
-                f = open(path_to_image, 'rb')
-                statinfo = os.stat(path_to_image)
-                img_size = statinfo.st_size
-                self.send_response(200)
-                self.send_header('Content-type', 'image/png')
-                self.send_header("Content-length", img_size)
-                self.end_headers(),
-                self.wfile.write(f.read())
-                f.close()
+                
+            self.send_response(200)
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(bytes("<html><head><title>looped.</title></head>", "utf-8"))
 
         if self.path=="/deleteloop":
             for x in range(100):
@@ -111,11 +107,11 @@ class MyServer(BaseHTTPRequestHandler):
                 # delete file if exists
                 deleteFile(path_to_image)
                 
-                self.send_response(200)
-                self.send_response(200)
-                self.send_header("Content-type", "text/html")
-                self.end_headers()
-                self.wfile.write(bytes("<html><head><title>deleted.</title></head>", "utf-8"))
+            self.send_response(200)
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(bytes("<html><head><title>deleted.</title></head>", "utf-8"))
 
 myServer = HTTPServer((hostName, hostPort), MyServer)
 print(time.asctime(), "Server Starts - %s:%s" % (hostName, hostPort))
