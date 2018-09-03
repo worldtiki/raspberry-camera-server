@@ -1,4 +1,6 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from time import sleep
+from urllib.parse import urlparse
 import time
 import picamera
 import os
@@ -62,6 +64,58 @@ class MyServer(BaseHTTPRequestHandler):
             self.wfile.write(f.read())
             f.close()
             deleteFile(path_to_image)
+
+        if self.path=="/get":
+            if '?' in self.path:
+                path, tmp = self.path.split('?', 1)
+                qs = urlparse.parse_qs(tmp)
+                pic = qs.get("pic")
+            
+                path_to_image = '/home/pi/' + pic + 'image.png'
+            
+                f = open(path_to_image, 'rb')
+                statinfo = os.stat(path_to_image)
+                img_size = statinfo.st_size
+                self.send_response(200)
+                self.send_header('Content-type', 'image/png')
+                self.send_header("Content-length", img_size)
+                self.end_headers(),
+                self.wfile.write(f.read())
+                f.close()
+
+        if self.path=="/loop":
+            for x in range(100):
+                sleep(5)
+
+                path_to_image = '/home/pi/' + str(x) + 'image.png'
+                # delete file if exists
+                deleteFile(path_to_image)
+                camera.resolution = (1920, 1080)
+                camera.capture(path_to_image)
+                #Open the static file requested and send it
+                f = open(path_to_image, 'rb')
+                statinfo = os.stat(path_to_image)
+                img_size = statinfo.st_size
+                self.send_response(200)
+                self.send_header('Content-type', 'image/png')
+                self.send_header("Content-length", img_size)
+                self.end_headers(),
+                self.wfile.write(f.read())
+                f.close()
+
+        if self.path=="/deleteloop":
+            for x in range(100):
+                sleep(5)
+
+                path_to_image = '/home/pi/' + str(x) + 'image.png'
+                # delete file if exists
+                deleteFile(path_to_image)
+                
+                self.send_response(200)
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(bytes("<html><head><title>deleted.</title></head>", "utf-8"))
 
 myServer = HTTPServer((hostName, hostPort), MyServer)
 print(time.asctime(), "Server Starts - %s:%s" % (hostName, hostPort))
