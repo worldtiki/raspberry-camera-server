@@ -87,7 +87,7 @@ class MyServer(BaseHTTPRequestHandler):
             for x in range(100):
                 sleep(5)
 
-                path_to_image = '/home/pi/image' + str(x) + '.png'
+                path_to_image = '/home/pi/loop/image' + str(x) + '.png'
                 # delete file if exists
                 deleteFile(path_to_image)
                 camera.resolution = (1920, 1080)
@@ -103,7 +103,7 @@ class MyServer(BaseHTTPRequestHandler):
             for x in range(100):
                 sleep(5)
 
-                path_to_image = '/home/pi/image' + str(x) + '.png'
+                path_to_image = '/home/pi/loop/image' + str(x) + '.png'
                 # delete file if exists
                 deleteFile(path_to_image)
                 
