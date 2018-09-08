@@ -2,6 +2,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from time import sleep
 from urllib.parse import urlparse
 import time
+import base64
+import json
 import picamera
 import os
 
@@ -16,63 +18,63 @@ def deleteFile(fileName):
         pass
 
 class MyServer(BaseHTTPRequestHandler):
+    def do_AUTHHEAD(self):
+        self.send_response(401)
+        self.send_header(
+            'WWW-Authenticate', 'Basic realm="Demo Realm"')
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
 
     def do_GET(self):
-        if self.path=="/":
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            self.wfile.write(bytes("<html><head><title>Title goes here.</title></head>", "utf-8"))
-            self.wfile.write(bytes("<body><p>This is a test.</p>", "utf-8"))
-            self.wfile.write(bytes("<p>You accessed path: %s</p>" % self.path, "utf-8"))
-            self.wfile.write(bytes("</body></html>", "utf-8"))
+        key = self.server.get_auth_key()
 
-        if self.path=="/video":
-            path_to_video='/home/pi/video.h264'
-             # delete file if exists
-            deleteFile(path_to_video)
-            camera.resolution = (640, 480)
-            camera.start_recording(path_to_video)
-            camera.wait_recording(5)
-            camera.stop_recording()
-            #Open the static file requested and send it
-            f = open(path_to_video, 'rb')
-            statinfo = os.stat(path_to_video)
-            file_size = statinfo.st_size
-            self.send_response(200)
-            self.send_header('Content-type', 'video/h264')
-            self.send_header("Content-length", file_size)
-            self.end_headers(),
-            self.wfile.write(f.read())
-            f.close()
-            deleteFile(path_to_video)
+        ''' Present frontpage with user authentication. '''
+        if self.headers.get('Authorization') == None:
+            self.do_AUTHHEAD()
 
-        if self.path=="/pic":
-            path_to_image = '/home/pi/image.png'
-            # delete file if exists
-            deleteFile(path_to_image)
-            camera.resolution = (1920, 1080)
-            camera.capture(path_to_image)
-            #Open the static file requested and send it
-            f = open(path_to_image, 'rb')
-            statinfo = os.stat(path_to_image)
-            img_size = statinfo.st_size
-            self.send_response(200)
-            self.send_header('Content-type', 'image/png')
-            self.send_header("Content-length", img_size)
-            self.end_headers(),
-            self.wfile.write(f.read())
-            f.close()
-            deleteFile(path_to_image)
+            response = {
+                'success': False,
+                'error': 'No auth header received'
+            }
 
-        if self.path.startswith("/get"):
-            if '?' in self.path:
-                path, tmp = self.path.split('?', 1)
-                qs = urlparse.parse_qs(tmp)
-                pic = qs.get("pic")
-            
-                path_to_image = '/home/pi/' + pic + 'image.png'
-            
+            self.wfile.write(bytes(json.dumps(response), 'utf-8'))
+        elif self.headers.get('Authorization') == 'Basic ' + str(key):
+            if self.path=="/":
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(bytes("<html><head><title>Title goes here.</title></head>", "utf-8"))
+                self.wfile.write(bytes("<body><p>This is a test.</p>", "utf-8"))
+                self.wfile.write(bytes("<p>You accessed path: %s</p>" % self.path, "utf-8"))
+                self.wfile.write(bytes("</body></html>", "utf-8"))
+
+            if self.path=="/video":
+                path_to_video='/home/pi/video.h264'
+                # delete file if exists
+                deleteFile(path_to_video)
+                camera.resolution = (640, 480)
+                camera.start_recording(path_to_video)
+                camera.wait_recording(5)
+                camera.stop_recording()
+                #Open the static file requested and send it
+                f = open(path_to_video, 'rb')
+                statinfo = os.stat(path_to_video)
+                file_size = statinfo.st_size
+                self.send_response(200)
+                self.send_header('Content-type', 'video/h264')
+                self.send_header("Content-length", file_size)
+                self.end_headers(),
+                self.wfile.write(f.read())
+                f.close()
+                deleteFile(path_to_video)
+
+            if self.path=="/pic":
+                path_to_image = '/home/pi/image.png'
+                # delete file if exists
+                deleteFile(path_to_image)
+                camera.resolution = (1920, 1080)
+                camera.capture(path_to_image)
+                #Open the static file requested and send it
                 f = open(path_to_image, 'rb')
                 statinfo = os.stat(path_to_image)
                 img_size = statinfo.st_size
@@ -82,36 +84,16 @@ class MyServer(BaseHTTPRequestHandler):
                 self.end_headers(),
                 self.wfile.write(f.read())
                 f.close()
-
-        if self.path=="/loop":
-            for x in range(100):
-                sleep(5)
-
-                path_to_image = '/home/pi/loop/image' + str(x) + '.png'
-                # delete file if exists
                 deleteFile(path_to_image)
-                camera.resolution = (1920, 1080)
-                camera.capture(path_to_image)
-                
-            self.send_response(200)
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            self.wfile.write(bytes("<html><head><title>looped.</title></head>", "utf-8"))
+        else:
+            self.do_AUTHHEAD()
 
-        if self.path=="/deleteloop":
-            for x in range(100):
-                sleep(5)
+            response = {
+                'success': False,
+                'error': 'Invalid credentials'
+            }
 
-                path_to_image = '/home/pi/loop/image' + str(x) + '.png'
-                # delete file if exists
-                deleteFile(path_to_image)
-                
-            self.send_response(200)
-            self.send_response(200)
-            self.send_header("Content-type", "text/html")
-            self.end_headers()
-            self.wfile.write(bytes("<html><head><title>deleted.</title></head>", "utf-8"))
+            self.wfile.write(bytes(json.dumps(response), 'utf-8'))
 
 myServer = HTTPServer((hostName, hostPort), MyServer)
 print(time.asctime(), "Server Starts - %s:%s" % (hostName, hostPort))
@@ -120,7 +102,17 @@ camera = picamera.PiCamera()
 # Turn the camera's LED off
 camera.led = False
 
+key = ''
+
+def set_auth(self, username, password):
+    self.key = base64.b64encode(
+        bytes('%s:%s' % (username, password), 'utf-8')).decode('ascii')
+
+def get_auth_key(self):
+    return self.key
+
 try:
+    myServer.set_auth('admin', 'admin')
     myServer.serve_forever()
 except KeyboardInterrupt:
     pass
