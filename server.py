@@ -107,9 +107,6 @@ class MyServer(BaseHTTPRequestHandler):
 class CustomHTTPServer(HTTPServer):
     key = ''
 
-    def __init__(self, address, handlerClass=MyServer):
-        super().__init__(address, handlerClass)
-
     def set_auth(self, username, password):
         self.key = base64.b64encode(
             bytes('%s:%s' % (username, password), 'utf-8')).decode('ascii')
@@ -117,7 +114,7 @@ class CustomHTTPServer(HTTPServer):
     def get_auth_key(self):
         return self.key
 
-myServer = HTTPServer((hostName, hostPort), MyServer)
+myServer = CustomHTTPServer((hostName, hostPort), MyServer)
 print(time.asctime(), "Server Starts - %s:%s" % (hostName, hostPort))
 
 camera = picamera.PiCamera()
@@ -125,7 +122,7 @@ camera = picamera.PiCamera()
 camera.led = False
 
 try:
-    myServer.set_auth(MyServer, 'admin', 'admin')
+    myServer.set_auth('admin', 'admin')
     myServer.serve_forever()
 except KeyboardInterrupt:
     pass
