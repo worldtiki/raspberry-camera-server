@@ -18,6 +18,15 @@ def deleteFile(fileName):
         pass
 
 class MyServer(BaseHTTPRequestHandler):
+    key = ''
+
+    def set_auth(self, username, password):
+        self.key = base64.b64encode(
+            bytes('%s:%s' % (username, password), 'utf-8')).decode('ascii')
+
+    def get_auth_key(self):
+        return self.key
+
     def do_AUTHHEAD(self):
         self.send_response(401)
         self.send_header(
@@ -95,6 +104,19 @@ class MyServer(BaseHTTPRequestHandler):
 
             self.wfile.write(bytes(json.dumps(response), 'utf-8'))
 
+class CustomHTTPServer(HTTPServer):
+    key = ''
+
+    def __init__(self, address, handlerClass=MyServer):
+        super().__init__(address, handlerClass)
+
+    def set_auth(self, username, password):
+        self.key = base64.b64encode(
+            bytes('%s:%s' % (username, password), 'utf-8')).decode('ascii')
+
+    def get_auth_key(self):
+        return self.key
+
 myServer = HTTPServer((hostName, hostPort), MyServer)
 print(time.asctime(), "Server Starts - %s:%s" % (hostName, hostPort))
 
@@ -102,17 +124,8 @@ camera = picamera.PiCamera()
 # Turn the camera's LED off
 camera.led = False
 
-key = ''
-
-def set_auth(self, username, password):
-    self.key = base64.b64encode(
-        bytes('%s:%s' % (username, password), 'utf-8')).decode('ascii')
-
-def get_auth_key(self):
-    return self.key
-
 try:
-    myServer.set_auth('admin', 'admin')
+    myServer.set_auth(MyServer, 'admin', 'admin')
     myServer.serve_forever()
 except KeyboardInterrupt:
     pass
